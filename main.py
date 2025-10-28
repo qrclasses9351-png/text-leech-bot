@@ -17,8 +17,10 @@ flask_app = Flask(__name__)
 def home():
     return "✅ RAS Downloader Bot is Live!", 200
 
+# Handle Telegram webhook (Telegram may hit both /webhook or /<token>)
 @flask_app.route('/webhook', methods=['POST'])
-def webhook():
+@flask_app.route('/<token>', methods=['POST'])
+def webhook(token=None):
     return "OK", 200
 
 # ---------- Env Check ----------
@@ -40,10 +42,16 @@ class RASDownloader:
         self.app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.text_handler))
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("🤖 *RAS Downloader Ready!*\nSend .txt file or direct PDF/MP4 links to download & upload.", parse_mode="Markdown")
+        await update.message.reply_text(
+            "🤖 *RAS Downloader Ready!*\n"
+            "Send .txt file or direct PDF/MP4 links to download & upload.",
+            parse_mode="Markdown"
+        )
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text("📘 Send text containing links or upload `.txt` file.\nExample:\nhttps://example.com/video.mp4")
+        await update.message.reply_text(
+            "📘 Send text containing links or upload `.txt` file.\nExample:\nhttps://example.com/video.mp4"
+        )
 
     async def text_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = update.message.text
@@ -71,7 +79,6 @@ class RASDownloader:
     async def process_links(self, links, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.message.chat_id
         await update.message.reply_text(f"🔍 {len(links)} लिंक मिले, डाउनलोड शुरू...")
-
         for link in links:
             url, filename = link["url"], link["filename"]
             file_path = self.download(url, filename)
@@ -85,9 +92,11 @@ class RASDownloader:
         links = []
         for url in urls:
             ext = ".pdf" if ".pdf" in url else ".mp4" if ".mp4" in url else None
-            if not ext: continue
+            if not ext:
+                continue
             name = url.split("/")[-1].split("?")[0]
-            if not name.endswith(ext): name += ext
+            if not name.endswith(ext):
+                name += ext
             links.append({"url": url, "filename": name})
         return links
 
