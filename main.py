@@ -4,35 +4,27 @@ import requests
 import logging
 from flask import Flask, request
 from telegram import Update, Document
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# ---------- Logging ----------
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ---------- Flask App ----------
+# Flask app
 flask_app = Flask(__name__)
 
-@flask_app.route('/')
-def home():
-    return "✅ RAS Downloader Bot is Live!", 200
-
-# Handle Telegram webhook (Telegram may hit both /webhook or /<token>)
-@flask_app.route('/webhook', methods=['POST'])
-@flask_app.route('/<token>', methods=['POST'])
-def webhook(token=None):
-    return "OK", 200
-
-# ---------- Env Check ----------
+# ---------- Environment ----------
 def check_environment():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
+    render_url = os.getenv("RENDER_EXTERNAL_URL")
     if not token:
-        print("❌ TELEGRAM_BOT_TOKEN missing in environment!")
-        return None
-    print("✅ Environment OK | Bot Token:", token[:10])
-    return token
+        print("❌ TELEGRAM_BOT_TOKEN not set")
+        return None, None
+    print("✅ Environment OK")
+    return token, render_url
 
-# ---------- Bot Class ----------
+
+# ---------- Telegram Bot ----------
 class RASDownloader:
     def __init__(self, token):
         self.app = Application.builder().token(token).build()
@@ -43,15 +35,12 @@ class RASDownloader:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(
-            "🤖 *RAS Downloader Ready!*\n"
-            "Send .txt file or direct PDF/MP4 links to download & upload.",
+            "🤖 *RAS Downloader Active!*\nSend text or `.txt` file with links.",
             parse_mode="Markdown"
         )
 
     async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        await update.message.reply_text(
-            "📘 Send text containing links or upload `.txt` file.\nExample:\nhttps://example.com/video.mp4"
-        )
+        await update.message.reply_text("📘 Send .txt or direct PDF/MP4 link to download & auto-upload.")
 
     async def text_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = update.message.text
@@ -62,10 +51,10 @@ class RASDownloader:
         await self.process_links(links, update, context)
 
     async def txt_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        document: Document = update.message.document
-        file = await document.get_file()
+        doc: Document = update.message.document
+        file = await doc.get_file()
+        path = f"downloads/{doc.file_name}"
         os.makedirs("downloads", exist_ok=True)
-        path = f"downloads/{document.file_name}"
         await file.download_to_drive(path)
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -94,54 +83,69 @@ class RASDownloader:
             ext = ".pdf" if ".pdf" in url else ".mp4" if ".mp4" in url else None
             if not ext:
                 continue
-            name = url.split("/")[-1].split("?")[0]
-            if not name.endswith(ext):
-                name += ext
-            links.append({"url": url, "filename": name})
+            filename = url.split("/")[-1].split("?")[0]
+            if not filename.endswith(ext):
+                filename += ext
+            links.append({"url": url, "filename": filename})
         return links
 
     def download(self, url, name):
         try:
-            path = f"downloads/{name}"
             os.makedirs("downloads", exist_ok=True)
-            r = requests.get(url, stream=True, headers={"User-Agent": "Mozilla/5.0"})
-            r.raise_for_status()
-            with open(path, "wb") as f:
-                for chunk in r.iter_content(8192):
-                    f.write(chunk)
-            return path
+            file_path = f"downloads/{name}"
+            with requests.get(url, stream=True, headers={"User-Agent": "Mozilla/5.0"}) as r:
+                r.raise_for_status()
+                with open(file_path, "wb") as f:
+                    for chunk in r.iter_content(8192):
+                        f.write(chunk)
+            return file_path
         except Exception as e:
-            logger.error(f"Download failed: {e}")
+            logger.error(f"Download error: {e}")
             return None
 
-# ---------- Setup Webhook ----------
-def setup_webhook(token):
-    render_url = os.getenv("RENDER_EXTERNAL_URL")
-    if not render_url:
-        print("🌀 Running in polling mode")
-        return None
+
+# ---------- Flask webhook ----------
+@flask_app.route("/", methods=["GET"])
+def home():
+    return "✅ Bot is Live!", 200
+
+
+@flask_app.route("/webhook", methods=["POST"])
+def webhook():
+    try:
+        data = request.get_json(force=True)
+        update = Update.de_json(data, bot_instance.app.bot)
+        bot_instance.app.update_queue.put_nowait(update)
+        return {"ok": True}, 200
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"error": str(e)}, 500
+
+
+# ---------- Webhook Setup ----------
+def setup_webhook(token, render_url):
     webhook_url = f"{render_url}/webhook"
-    print(f"🌐 Setting webhook to: {webhook_url}")
+    print(f"🌐 Setting webhook: {webhook_url}")
     requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
     r = requests.get(f"https://api.telegram.org/bot{token}/setWebhook?url={webhook_url}")
-    print("Webhook response:", r.text)
-    return webhook_url
+    print("🔁 Webhook response:", r.text)
+
 
 # ---------- Main ----------
 def main():
-    print("🚀 Starting RAS Downloader Bot (Webhook + TXT + Upload)...")
-    token = check_environment()
-    if not token: return
-    setup_webhook(token)
+    global bot_instance
+    print("🚀 Starting RAS Downloader (Webhook + TXT Upload + Auto Send)...")
 
-    bot = RASDownloader(token)
+    token, render_url = check_environment()
+    if not token or not render_url:
+        return
+
+    bot_instance = RASDownloader(token)
+    setup_webhook(token, render_url)
+
     port = int(os.environ.get("PORT", 10000))
-    render_url = os.getenv("RENDER_EXTERNAL_URL")
+    bot_instance.app.run_webhook(listen="0.0.0.0", port=port, webhook_url=f"{render_url}/webhook")
 
-    if render_url:
-        bot.app.run_webhook(listen="0.0.0.0", port=port, webhook_url=f"{render_url}/webhook")
-    else:
-        bot.app.run_polling()
 
 if __name__ == "__main__":
     main()
