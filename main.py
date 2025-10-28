@@ -118,12 +118,13 @@ class RASFileDownloader:
 
 # ========== AUTO WEBHOOK ==========
 def setup_webhook(token):
-    base_url = os.getenv("RENDER_EXTERNAL_URL")
-    if not base_url:
+    render_url = os.getenv("RENDER_EXTERNAL_URL")  # ✅ यह लाइन जोड़ो
+
+    if not render_url:
         print("🌀 Running in polling mode (local)")
         return None
 
-    webhook_url = f"{render_url}/webhook"
+    webhook_url = f"{render_url}/webhook"  # ✅ अब variable defined है
 
     print("🔁 Resetting webhook...")
     requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
