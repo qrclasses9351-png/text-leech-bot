@@ -123,7 +123,7 @@ def setup_webhook(token):
         print("🌀 Running in polling mode (local)")
         return None
 
-    webhook_url = f"{base_url}/{token}"
+    webhook_url = f"{render_url}/webhook"
 
     print("🔁 Resetting webhook...")
     requests.get(f"https://api.telegram.org/bot{token}/deleteWebhook")
