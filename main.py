@@ -150,12 +150,11 @@ def main():
         print(f"🌐 Setting webhook to: {WEBHOOK_URL}")
 
         bot.app.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            path=WEBHOOK_PATH,
-            webhook_url=WEBHOOK_URL,
-        )
-
+    listen="0.0.0.0",
+    port=PORT,
+    url_path=BOT_TOKEN,
+    webhook_url=WEBHOOK_URL,
+)
     except Exception as e:
         print(f"❌ Failed to start bot: {e}")
         print("💡 Troubleshooting tips:")
