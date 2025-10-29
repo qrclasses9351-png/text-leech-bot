@@ -142,22 +142,7 @@ def main():
 PORT = int(os.environ.get("PORT", 10000))
 RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://txt-to-video-leech-uploader-ibj3.onrender.com")
 
-    try:
-        print("🤖 Initializing bot...")
-        bot = FileDownloaderBot(BOT_TOKEN)
-        print("✅ Bot initialized successfully!")
 
-        WEBHOOK_PATH = f"/{BOT_TOKEN}"
-        WEBHOOK_URL = f"{RENDER_URL}{WEBHOOK_PATH}"
-
-        print(f"🌐 Setting webhook to: {WEBHOOK_URL}")
-
-        bot.app.run_webhook(
-    listen="0.0.0.0",
-    port=PORT,
-    url_path=BOT_TOKEN,
-    webhook_url=WEBHOOK_URL,
-)
     except Exception as e:
         print(f"❌ Failed to start bot: {e}")
         print("💡 Troubleshooting tips:")
