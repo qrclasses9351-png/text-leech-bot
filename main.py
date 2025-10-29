@@ -13,6 +13,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+app = Flask(__name__)
+
 def check_environment():
     """Check if all required environment variables are set"""
     bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
