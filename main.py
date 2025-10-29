@@ -143,14 +143,6 @@ PORT = int(os.environ.get("PORT", 10000))
 RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://txt-to-video-leech-uploader-ibj3.onrender.com")
 
 
-    except Exception as e:
-        print(f"❌ Failed to start bot: {e}")
-        print("💡 Troubleshooting tips:")
-        print("   - Check TELEGRAM_BOT_TOKEN and RENDER_EXTERNAL_URL values")
-        print("   - Ensure internet connectivity")
-        print("   - Check Render.com logs for details")
-
-
 @app.route("/")
 def home():
     return "✅ RAS Downloader Bot is Live on Render!", 200
