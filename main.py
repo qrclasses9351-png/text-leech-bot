@@ -166,15 +166,6 @@ RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://txt-to-video-leech-upload
         print("   - Check Render.com logs for details")
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 Bot is live and connected via webhook!")
-
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"📩 You said: {update.message.text}")
-
-application.add_handler(CommandHandler("start", start))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-
 @app.route("/")
 def home():
     return "✅ RAS Downloader Bot is Live on Render!", 200
