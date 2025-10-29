@@ -58,7 +58,7 @@ Send me text with download links, and I will extract & process them.
 
 1. Send me text containing download links  
 2. I will extract and process all PDF/video links  
-3. Files will be downloaded automatically
+3. Files will be downloaded automatically and sent to you.
 
 **Example format:**
 (Subject) Part 1 || Topic || Date: https://example.com/file.pdf
@@ -84,8 +84,19 @@ Send me text with download links, and I will extract & process them.
 
             for i, link in enumerate(links[:5], 1):  # Limit to 5
                 await status_msg.edit_text(f"📥 Downloading {i}/{len(links[:5])}: {link['name'][:30]}...")
-                if self.download_file(link['url'], link['filename']):
-                    success_count += 1
+
+                file_path = self.download_file(link['url'], link['filename'])
+                if file_path:
+                    try:
+                        # ✅ Send file to user
+                        with open(file_path, "rb") as f:
+                            await update.message.reply_document(f)
+                        success_count += 1
+                    except Exception as e:
+                        logger.error(f"Error sending file: {e}")
+                        await update.message.reply_text(f"⚠️ Error sending file: {link['filename']}")
+                else:
+                    await update.message.reply_text(f"❌ Failed to download: {link['url']}")
 
             await status_msg.edit_text(f"✅ Download complete! {success_count}/{len(links[:5])} files downloaded successfully.")
 
@@ -112,7 +123,7 @@ Send me text with download links, and I will extract & process them.
             os.makedirs('downloads', exist_ok=True)
             filepath = os.path.join('downloads', filename)
             headers = {'User-Agent': 'Mozilla/5.0'}
-            response = requests.get(url, stream=True, timeout=30, headers=headers)
+            response = requests.get(url, stream=True, timeout=60, headers=headers)
             response.raise_for_status()
 
             with open(filepath, 'wb') as f:
@@ -121,11 +132,11 @@ Send me text with download links, and I will extract & process them.
                         f.write(chunk)
 
             logger.info(f"Downloaded: {filename}")
-            return True
+            return filepath
 
         except Exception as e:
             logger.error(f"Download failed {url}: {e}")
-            return False
+            return None
 
 
 def main():
@@ -150,11 +161,11 @@ def main():
         print(f"🌐 Setting webhook to: {WEBHOOK_URL}")
 
         bot.app.run_webhook(
-    listen="0.0.0.0",
-    port=PORT,
-    url_path=BOT_TOKEN,
-    webhook_url=WEBHOOK_URL,
-)
+            listen="0.0.0.0",
+            port=PORT,
+            url_path=BOT_TOKEN,
+            webhook_url=WEBHOOK_URL,
+        )
     except Exception as e:
         print(f"❌ Failed to start bot: {e}")
         print("💡 Troubleshooting tips:")
