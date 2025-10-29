@@ -138,9 +138,9 @@ def main():
     if not check_environment():
         return
 
-    BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-    RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://txt-to-video-leech-uploader-ibj3.onrender.com")
-    PORT = int(os.getenv("PORT", "10000"))
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+PORT = int(os.environ.get("PORT", 10000))
+RENDER_URL = os.getenv("RENDER_EXTERNAL_URL", "https://txt-to-video-leech-uploader-ibj3.onrender.com")
 
     try:
         print("🤖 Initializing bot...")
@@ -165,7 +165,6 @@ def main():
         print("   - Ensure internet connectivity")
         print("   - Check Render.com logs for details")
 
-application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤖 Bot is live and connected via webhook!")
