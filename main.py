@@ -3,6 +3,7 @@ import re
 import requests
 import subprocess
 import logging
+import asyncio
 from telegram import Update, Document
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
