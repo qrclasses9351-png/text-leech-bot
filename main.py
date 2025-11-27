@@ -94,7 +94,7 @@ class FileDownloaderBot:
 
             # check m3u8 and convert
             if url.endswith(".m3u8"):
-                mp4_path = self.convert_m3u8(url, filename.replace(".m3u8", ".mp4"))
+                mp4_path = await asyncio.to_thread(self.convert_m3u8, url, filename.replace(".m3u8", ".mp4"))
                 if mp4_path:
                     await update.message.reply_document(open(mp4_path, "rb"))
                     success += 1
@@ -128,7 +128,7 @@ class FileDownloaderBot:
                 output_path
             ]
 
-            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.call(cmd)
             return output_path if os.path.exists(output_path) else None
 
         except Exception as e:
