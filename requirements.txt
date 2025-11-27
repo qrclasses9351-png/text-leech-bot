@@ -1,3 +1,4 @@
-python-telegram-bot[webhooks]==20.6
-httpx==0.25.2
-requests
+python-telegram-bot==20.6
+httpx
+aiofiles
+ffmpeg-python
