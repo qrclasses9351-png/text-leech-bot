@@ -9,3 +9,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         value: your_bot_token_here
         sync: false
+buildCommand: |
+  apt-get update && apt-get install -y ffmpeg
+  pip install -r requirements.txt
+  
