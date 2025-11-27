@@ -308,7 +308,6 @@ def main():
         await processor.stop_workers()
 
     app.post_init = on_startup
-    app.post_shutdown.append(on_shutdown)
 
     # run
     logger.info("Starting Telegram bot application")
