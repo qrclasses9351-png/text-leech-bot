@@ -88,7 +88,7 @@ class FileDownloaderBot:
         status_msg = await update.message.reply_text(f"🔍 Found {len(links)} links. Starting download...")
         success = 0
 
-        for i, url in enumerate(links[:10], 1):
+        for i, url in enumerate(links, 1):
             filename = self.get_filename_from_url(url)
             await status_msg.edit_text(f"⬇️ Downloading {i}/{len(links)}: {filename}")
 
